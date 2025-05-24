@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Metal Value Calculator (Manual lb Input per Metal)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    input[type=number] { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; }
+    .inline-input { width: 6rem; padding: 0.3rem; text-align: right; }
+    #conversion { margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem; }
+    table { width: 100%; margin-top: 1.5rem; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: center; }
+    th { background-color: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <h2>Metal Value Calculator 金属价值计算器 (Manual lb Input)</h2>
+
+  <label>Manual CNY Rate 手动人民币汇率:
+    <input id="manual_fx" type="number" value="7.25" step="0.01" class="inline-input">
+  </label>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Metal<br>金属</th>
+        <th>Weight (lb)<br>重量（磅）</th>
+        <th>Grams<br>克</th><th>Kilograms<br>公斤</th>
+        <th>Unit Price (USD)<br>单价（美元）</th>
+        <th>US Trade Unit<br>美国交易单位</th>
+        <th>International Unit<br>国际交易单位</th>
+        <th>Weight in Unit<br>单位重量</th>
+        <th>Value (CNY)<br>价值（人民币）</th>
+      </tr>
+    </thead>
+    <tbody id="metal_table"></tbody>
+  </table>
+
+  <script>
+    let metals = [
+      { name: "Iron 铁", lb: 1.0, unit: "metric ton", price: 100.08, us_unit: "short ton 短吨", intl_unit: "metric ton 公吨" },
+      { name: "Tin 锡", lb: 0.1, unit: "metric ton", price: 32835, us_unit: "pound 磅", intl_unit: "metric ton 公吨" },
+      { name: "Copper 铜", lb: 0.2, unit: "lb", price: 4.5511, us_unit: "pound 磅", intl_unit: "metric ton 公吨" },
+      { name: "Gold 金", lb: 0.01, unit: "troy oz", price: 3210.05, us_unit: "troy oz 金衡盎司", intl_unit: "troy oz 金衡盎司" },
+      { name: "Silver 银", lb: 0.00, unit: "troy oz", price: 32.135, us_unit: "troy oz 金衡盎司", intl_unit: "troy oz 金衡盎司" },
+      { name: "Palladium 钯", lb: 0.5, unit: "troy oz", price: 964, us_unit: "troy oz 金衡盎司", intl_unit: "troy oz 金衡盎司" },
+      { name: "Platinum 铂", lb: 0.5, unit: "troy oz", price: 986, us_unit: "troy oz 金衡盎司", intl_unit: "troy oz 金衡盎司" }
+    ];
+
+    const unitConversions = {
+      "lb": g => g / 453.592,
+      "g": g => g,
+      "troy oz": g => g / 31.1035,
+      "metric ton": g => g / 1_000_000
+    };
+
+    function updateLb(index, value) {
+      metals[index].lb = parseFloat(value) || 0;
+      populateTable();
+    }
+
+    function updatePrice(index, value) {
+      metals[index].price = parseFloat(value) || 0;
+      populateTable();
+    }
+
+    function populateTable() {
+      const fxRate = parseFloat(document.getElementById("manual_fx").value) || 7.25;
+      const tbody = document.getElementById("metal_table");
+      tbody.innerHTML = "";
+
+      metals.forEach((metal, i) => {
+        const grams = metal.lb * 453.592;
+        const weightInUnit = unitConversions[metal.unit](grams);
+        const usdValue = weightInUnit * metal.price;
+        const cnyValue = usdValue * fxRate;
+
+        const row = `
+          <tr>
+            <td>${metal.name}</td>
+            <td><input type="number" step="0.01" class="inline-input" value="${metal.lb}" onchange="updateLb(${i}, this.value)"></td>
+            <td>${grams.toFixed(2)}</td><td>${(grams / 1000).toFixed(4)}</td>
+            <td><input type="number" step="0.01" class="inline-input" value="${metal.price}" onchange="updatePrice(${i}, this.value)"></td>
+            <td>${metal.us_unit}</td>
+            <td>${metal.intl_unit}</td>
+            <td>${weightInUnit.toFixed(6)}</td>
+            <td>${cnyValue.toFixed(2)}</td>
+          </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    document.getElementById("manual_fx").addEventListener("input", populateTable);
+    window.onload = populateTable;
+  </script>
+</body>
+</html>
